@@ -167,6 +167,7 @@ export default function (pi: SessionStatusExtensionAPI): void {
 	});
 
 	pi.on("agent_start", (_event, ctx) => {
+		windowAddress ??= activeTerminalWindowAddress();
 		publish(ctx, "working");
 	});
 

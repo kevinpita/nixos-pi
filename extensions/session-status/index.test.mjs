@@ -110,9 +110,18 @@ test("publishes lifecycle and attention states for one Pi process", async (t) =>
 	assert.equal(record.revision, 1);
 	assert.equal(typeof record.updatedAt, "number");
 
+	await writeFile(
+		activeWindowPath,
+		JSON.stringify({
+			address: "0xABCDEF",
+			class: "com.mitchellh.ghostty",
+			initialClass: "com.mitchellh.ghostty",
+		}),
+	);
 	await harness.handlers.get("agent_start")({}, harness.ctx);
 	record = await readRecord(runtimeDir);
 	assert.equal(record.status, "working");
+	assert.equal(record.windowAddress, "0xabcdef");
 
 	await harness.handlers.get("tool_call")({ toolName: "bash" }, harness.ctx);
 	record = await readRecord(runtimeDir);
@@ -133,14 +142,6 @@ test("publishes lifecycle and attention states for one Pi process", async (t) =>
 	record = await readRecord(runtimeDir);
 	assert.equal(record.status, "done");
 
-	await writeFile(
-		activeWindowPath,
-		JSON.stringify({
-			address: "0xABCDEF",
-			class: "com.mitchellh.ghostty",
-			initialClass: "com.mitchellh.ghostty",
-		}),
-	);
 	harness.setSessionName("Pi session bar");
 	await harness.handlers.get("session_info_changed")(
 		{ name: "Pi session bar" },
