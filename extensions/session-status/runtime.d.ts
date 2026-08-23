@@ -4,6 +4,18 @@ declare const process: {
 	getuid(): number;
 };
 
+declare module "node:child_process" {
+	export function execFileSync(
+		file: string,
+		args: readonly string[],
+		options: {
+			readonly encoding: "utf8";
+			readonly env: Readonly<Record<string, string | undefined>>;
+			readonly timeout: number;
+		},
+	): string;
+}
+
 declare module "node:fs" {
 	export function mkdirSync(
 		path: string,

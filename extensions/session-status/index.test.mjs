@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -44,11 +44,54 @@ async function readRecord(runtimeDir) {
 
 test("publishes lifecycle and attention states for one Pi process", async (t) => {
 	const runtimeDir = await mkdtemp(join(tmpdir(), "pi-session-status-test-"));
-	const previousRuntimeDir = process.env.XDG_RUNTIME_DIR;
-	process.env.XDG_RUNTIME_DIR = runtimeDir;
+	const binDir = join(runtimeDir, "bin");
+	const activeWindowPath = join(runtimeDir, "active-window.json");
+	await mkdir(binDir);
+	await writeFile(
+		join(binDir, "hyprctl"),
+		[
+			`#!${process.execPath}`,
+			'const { readFileSync } = require("node:fs");',
+			"if (process.env.LD_LIBRARY_PATH) process.exit(1);",
+			'process.stdout.write(readFileSync(process.env.PI_SESSION_STATUS_ACTIVE_WINDOW, "utf8"));',
+			"",
+		].join("\n"),
+	);
+	await chmod(join(binDir, "hyprctl"), 0o755);
+	await writeFile(
+		activeWindowPath,
+		JSON.stringify({
+			address: "0x111",
+			class: "org.telegram.desktop",
+			initialClass: "org.telegram.desktop",
+		}),
+	);
+
+	const environmentNames = [
+		"XDG_RUNTIME_DIR",
+		"PATH",
+		"HYPRLAND_INSTANCE_SIGNATURE",
+		"TERM_PROGRAM",
+		"LD_LIBRARY_PATH",
+		"PI_SESSION_STATUS_ACTIVE_WINDOW",
+	];
+	const previousEnvironment = Object.fromEntries(
+		environmentNames.map((name) => [name, process.env[name]]),
+	);
+	Object.assign(process.env, {
+		XDG_RUNTIME_DIR: runtimeDir,
+		PATH: `${binDir}:${process.env.PATH ?? ""}`,
+		HYPRLAND_INSTANCE_SIGNATURE: "test-instance",
+		TERM_PROGRAM: "ghostty",
+		LD_LIBRARY_PATH: "/incompatible-gcc",
+		PI_SESSION_STATUS_ACTIVE_WINDOW: activeWindowPath,
+	});
 	t.after(async () => {
-		if (previousRuntimeDir === undefined) delete process.env.XDG_RUNTIME_DIR;
-		else process.env.XDG_RUNTIME_DIR = previousRuntimeDir;
+		for (const name of environmentNames) {
+			const previous = previousEnvironment[name];
+			if (previous === undefined) delete process.env[name];
+			else process.env[name] = previous;
+		}
 		await rm(runtimeDir, { recursive: true, force: true });
 	});
 
@@ -63,6 +106,7 @@ test("publishes lifecycle and attention states for one Pi process", async (t) =>
 	assert.equal(record.label, "nixos-config");
 	assert.equal(record.project, "nixos-config");
 	assert.equal(record.status, "idle");
+	assert.equal(record.windowAddress, undefined);
 	assert.equal(record.revision, 1);
 	assert.equal(typeof record.updatedAt, "number");
 
@@ -89,6 +133,14 @@ test("publishes lifecycle and attention states for one Pi process", async (t) =>
 	record = await readRecord(runtimeDir);
 	assert.equal(record.status, "done");
 
+	await writeFile(
+		activeWindowPath,
+		JSON.stringify({
+			address: "0xABCDEF",
+			class: "com.mitchellh.ghostty",
+			initialClass: "com.mitchellh.ghostty",
+		}),
+	);
 	harness.setSessionName("Pi session bar");
 	await harness.handlers.get("session_info_changed")(
 		{ name: "Pi session bar" },
@@ -97,10 +149,28 @@ test("publishes lifecycle and attention states for one Pi process", async (t) =>
 	record = await readRecord(runtimeDir);
 	assert.equal(record.label, "Pi session bar");
 	assert.equal(record.status, "done");
+	assert.equal(record.windowAddress, "0xabcdef");
 
 	await harness.handlers.get("session_shutdown")({ reason: "quit" }, harness.ctx);
 	assert.equal(
 		existsSync(join(runtimeDir, "pi-session-status", `${process.pid}.json`)),
 		false,
 	);
+
+	await writeFile(
+		activeWindowPath,
+		JSON.stringify({
+			address: "0x222",
+			class: "com.mitchellh.ghostty",
+			initialClass: "com.mitchellh.ghostty",
+		}),
+	);
+	const startupHarness = createHarness();
+	sessionStatusExtension(startupHarness.pi);
+	await startupHarness.handlers
+		.get("session_start")({ reason: "startup" }, startupHarness.ctx);
+	record = await readRecord(runtimeDir);
+	assert.equal(record.windowAddress, "0x222");
+	await startupHarness.handlers
+		.get("session_shutdown")({ reason: "quit" }, startupHarness.ctx);
 });
