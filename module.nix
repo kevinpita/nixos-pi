@@ -1,0 +1,162 @@
+{
+  self,
+  pi-flake,
+}:
+{
+  pkgs,
+  username,
+  ...
+}:
+let
+  system = pkgs.stdenv.hostPlatform.system;
+  piPackage = self.packages.${system}.pi-coding-agent;
+  piAudit = pkgs.writeShellApplication {
+    name = "pi-audit";
+    text = ''
+      exec ${piPackage}/bin/pi -e npm:@vigolium/piolium "$@"
+    '';
+  };
+in
+{
+  imports = [ pi-flake.nixosModules.default ];
+
+  programs.nix-ld.enable = true;
+
+  services.pi-coding-agent = {
+    enable = true;
+    users = [ username ];
+    package = piPackage;
+    extraEnv = {
+      PI_SKIP_VERSION_CHECK = "1";
+      PI_TELEMETRY = "0";
+    };
+    extensions = [ ];
+    agentFiles.keybindings = {
+      mutable = false;
+      value = {
+        "tui.editor.cursorRight" = [ "right" ];
+        "app.session.rename" = [ ];
+      };
+    };
+  };
+
+  environment = {
+    systemPackages = with pkgs; [
+      fd
+      nodejs
+      piAudit
+    ];
+
+    sessionVariables = {
+      PI_SKIP_VERSION_CHECK = "1";
+      PI_TELEMETRY = "0";
+    };
+  };
+
+  home-manager.users.${username} =
+    { config, ... }:
+    {
+      home.file = {
+        ".pi-lens/config.json" = {
+          force = true;
+          text = builtins.toJSON {
+            ignore = [
+              "**/*.md"
+              "**/*.mdx"
+              "**/*.markdown"
+            ];
+          };
+        };
+
+        ".pi/agent/AGENTS.md".source = ./AGENTS.md;
+
+        ".pi/agent/pstack.json" = {
+          force = true;
+          text = builtins.toJSON {
+            defaultOn = true;
+            models = {
+              analysis = "openai-codex/gpt-5.6-sol:xhigh";
+              implementation = "openai-codex/gpt-5.6-sol:xhigh";
+              review = [ "openai-codex/gpt-5.6-sol:xhigh" ];
+            };
+          };
+        };
+
+        ".config/rpiv-todo/config.json" = {
+          force = true;
+          text = builtins.toJSON { maxWidgetLines = 5; };
+        };
+
+        ".pi/settings.json" = {
+          force = true;
+          text = builtins.toJSON { ayu.checkpoint.enabled = false; };
+        };
+
+        ".pi/agent/extensions/auto-session-name.ts".source = ./extensions/auto-session-name.ts;
+        ".pi/agent/extensions/copy-code/index.ts".source = ./extensions/copy-code/index.ts;
+        ".pi/agent/extensions/copy-code/parser.ts".source = ./extensions/copy-code/parser.ts;
+        ".pi/agent/extensions/continue-after-compaction.ts".source =
+          ./extensions/continue-after-compaction.ts;
+        ".pi/agent/extensions/codex-pace".source = ./extensions/codex-pace;
+        ".pi/agent/extensions/file-picker.ts".source = ./extensions/file-picker.ts;
+        ".pi/agent/extensions/git-reference-picker".source = ./extensions/git-reference-picker;
+        ".pi/agent/extensions/global-prompt-history".source = ./extensions/global-prompt-history;
+        ".pi/agent/extensions/session-status".source = ./extensions/session-status;
+        ".pi/agent/extensions/split-session".source = ./extensions/split-session;
+
+        ".pi/agent/settings.json" = {
+          force = true;
+          text = builtins.toJSON {
+            lastChangelogVersion = piPackage.version;
+            defaultProvider = "openai-codex";
+            defaultModel = "gpt-5.6-sol";
+            defaultThinkingLevel = "xhigh";
+            enableInstallTelemetry = false;
+            enableSkillCommands = true;
+            "pi-gpt-fast-mode" = false;
+            theme = "dark";
+            tuiMode = "regular";
+            packages = [
+              "npm:@juicesharp/rpiv-ask-user-question"
+              "npm:@juicesharp/rpiv-todo"
+              "npm:pi-intercom"
+              {
+                source = "npm:@ogulcancelik/pi-herdr";
+                skills = [ ];
+              }
+              "npm:pi-prompt-template-model"
+              "npm:pi-web-access"
+              "npm:pi-subagents"
+              "npm:@kevinpita/pi-pstack"
+              "git:github.com/kevinpita/pi-gpt-fast-mode@6a67a9ceba52f9da5f89d5bc98111b419df20022"
+              "npm:pi-lens"
+              "npm:@ff-labs/fff-bun"
+              "npm:@ff-labs/pi-fff"
+              "npm:@narumitw/pi-usage"
+              "npm:pi-zentui"
+              "npm:pi-simplify"
+              "npm:pi-claude-code-tui"
+              "npm:pi-colours"
+              "npm:@quintinshaw/pi-dynamic-workflows"
+            ];
+          };
+        };
+
+        ".pi/agent/prompts".source = ./prompts;
+        ".pi/agent/themes".source = ./themes;
+
+        ".pi/agent/zentui.json" = {
+          force = true;
+          text = builtins.toJSON {
+            extensionStatuses.colorModes = {
+              dictation = "original";
+              fast-mode = "original";
+            };
+          };
+        };
+
+        ".pi/agent/skills".source =
+          config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/.agents/skills";
+      };
+    };
+}
