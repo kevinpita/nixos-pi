@@ -162,7 +162,6 @@ export default function (pi: SessionStatusExtensionAPI): void {
 
 	pi.on("session_info_changed", (event, ctx) => {
 		sessionName = normalizeName(event.name);
-		windowAddress ??= activeTerminalWindowAddress();
 		publish(ctx, status);
 	});
 
