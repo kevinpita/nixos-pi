@@ -82,23 +82,23 @@
           let
             evaluated = nixpkgs.lib.nixosSystem {
               inherit system;
-              specialArgs.username = "tester";
+              specialArgs.username = "kevin";
               modules = [
                 self.nixosModules.default
                 self.nixosModules.dictationExtension
                 home-manager.nixosModules.home-manager
                 {
                   system.stateVersion = "25.11";
-                  users.users.tester = {
+                  users.users.kevin = {
                     isNormalUser = true;
                     group = "users";
-                    home = "/home/tester";
+                    home = "/home/kevin";
                   };
-                  home-manager.users.tester.home.stateVersion = "25.11";
+                  home-manager.users.kevin.home.stateVersion = "25.11";
                 }
               ];
             };
-            homeFiles = evaluated.config.home-manager.users.tester.home.file;
+            homeFiles = evaluated.config.home-manager.users.kevin.home.file;
             requiredHomeFiles = [
               ".pi/agent/AGENTS.md"
               ".pi/agent/extensions/dictation.ts"
