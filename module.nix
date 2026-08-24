@@ -119,6 +119,7 @@ in
             packages = [
               "npm:@juicesharp/rpiv-ask-user-question"
               "npm:@juicesharp/rpiv-todo"
+              "npm:pi-cd"
               "npm:pi-intercom"
               {
                 source = "npm:@ogulcancelik/pi-herdr";
