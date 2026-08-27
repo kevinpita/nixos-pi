@@ -92,11 +92,10 @@ in
           text = builtins.toJSON { ayu.checkpoint.enabled = false; };
         };
 
+        ".pi/agent/extensions/auto-compact.ts".source = ./extensions/auto-compact.ts;
         ".pi/agent/extensions/auto-session-name.ts".source = ./extensions/auto-session-name.ts;
         ".pi/agent/extensions/copy-code/index.ts".source = ./extensions/copy-code/index.ts;
         ".pi/agent/extensions/copy-code/parser.ts".source = ./extensions/copy-code/parser.ts;
-        ".pi/agent/extensions/continue-after-compaction.ts".source =
-          ./extensions/continue-after-compaction.ts;
         ".pi/agent/extensions/codex-pace".source = ./extensions/codex-pace;
         ".pi/agent/extensions/file-picker.ts".source = ./extensions/file-picker.ts;
         ".pi/agent/extensions/git-reference-picker".source = ./extensions/git-reference-picker;
@@ -111,6 +110,15 @@ in
             defaultProvider = "openai-codex";
             defaultModel = "gpt-5.6-sol";
             defaultThinkingLevel = "xhigh";
+            # Pi compacts when contextTokens > contextWindow - reserveTokens.
+            # 27200 = 10% of the 272k gpt-5.6-sol window, so Pi's own check
+            # (after a run, or before a prompt) fires at 90%. The auto-compact
+            # extension covers the same 90% line in the middle of a run.
+            compaction = {
+              enabled = true;
+              reserveTokens = 27200;
+              keepRecentTokens = 20000;
+            };
             enableInstallTelemetry = false;
             enableSkillCommands = true;
             "pi-gpt-fast-mode" = false;
