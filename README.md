@@ -8,7 +8,7 @@ It contains:
 - Pi and extension settings
 - local Pi extensions and their tests
 - global prompts, themes, and instructions
-- the link from Pi skills to shared Agent Skills
+- shared Pi, Claude Code, and Codex skills under `skills/`
 
 ## Use the NixOS module
 

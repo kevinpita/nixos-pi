@@ -99,7 +99,10 @@
               ];
             };
             homeFiles = evaluated.config.home-manager.users.kevin.home.file;
+            sharedSkillsTarget = "${evaluated.config.home-manager.users.kevin.home.homeDirectory}/.pi/agent/skills";
             requiredHomeFiles = [
+              ".claude/skills"
+              ".codex/skills"
               ".pi/agent/AGENTS.md"
               ".pi/agent/extensions/dictation.ts"
               ".pi/agent/extensions/session-status"
@@ -114,7 +117,24 @@
             module =
               assert evaluated.config.services.pi-coding-agent.enable;
               assert missingHomeFiles == [ ];
-              pkgs.writeText "nixos-pi-module-check" homeFiles.".pi/agent/settings.json".text;
+              assert homeFiles.".claude/skills".force;
+              assert homeFiles.".codex/skills".force;
+              pkgs.runCommand "nixos-pi-module-check" { } ''
+                for skillFile in \
+                  bro/SKILL.md \
+                  domain-modeling/ADR-FORMAT.md \
+                  domain-modeling/CONTEXT-FORMAT.md \
+                  domain-modeling/SKILL.md \
+                  grilling/SKILL.md \
+                  grill-me/SKILL.md \
+                  grill-with-docs/SKILL.md
+                do
+                  test -f ${homeFiles.".pi/agent/skills".source}/"$skillFile"
+                done
+                test "$(readlink ${homeFiles.".claude/skills".source})" = ${sharedSkillsTarget}
+                test "$(readlink ${homeFiles.".codex/skills".source})" = ${sharedSkillsTarget}
+                touch "$out"
+              '';
           }
         )
       );

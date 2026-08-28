@@ -68,6 +68,8 @@ in
           };
         };
 
+        ".pi/agent/skills".source = ./skills;
+
         ".pi/agent/AGENTS.md".source = ./AGENTS.md;
 
         ".pi/agent/pstack.json" = {
@@ -164,8 +166,15 @@ in
           };
         };
 
-        ".pi/agent/skills".source =
-          config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/.agents/skills";
+        ".claude/skills" = {
+          force = true;
+          source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/.pi/agent/skills";
+        };
+
+        ".codex/skills" = {
+          force = true;
+          source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/.pi/agent/skills";
+        };
       };
     };
 }
