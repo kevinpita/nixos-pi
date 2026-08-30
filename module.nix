@@ -136,7 +136,10 @@ in
               "npm:pi-prompt-template-model"
               "npm:pi-web-access"
               "npm:pi-subagents"
-              "npm:@kevinpita/pi-pstack"
+              {
+                source = "npm:@kevinpita/pi-pstack";
+                skills = [ "+skills/pstack-mode/SKILL.md" ];
+              }
               "npm:pi-lens"
               "npm:@ff-labs/fff-bun"
               "npm:@ff-labs/pi-fff"
