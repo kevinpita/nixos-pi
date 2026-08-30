@@ -98,7 +98,6 @@ in
         ".pi/agent/extensions/auto-session-name.ts".source = ./extensions/auto-session-name.ts;
         ".pi/agent/extensions/copy-code/index.ts".source = ./extensions/copy-code/index.ts;
         ".pi/agent/extensions/copy-code/parser.ts".source = ./extensions/copy-code/parser.ts;
-        ".pi/agent/extensions/codex-pace".source = ./extensions/codex-pace;
         ".pi/agent/extensions/file-picker.ts".source = ./extensions/file-picker.ts;
         ".pi/agent/extensions/git-reference-picker".source = ./extensions/git-reference-picker;
         ".pi/agent/extensions/global-prompt-history".source = ./extensions/global-prompt-history;
@@ -123,7 +122,6 @@ in
             };
             enableInstallTelemetry = false;
             enableSkillCommands = true;
-            "pi-gpt-fast-mode" = false;
             theme = "dark";
             tuiMode = "regular";
             packages = [
@@ -139,7 +137,6 @@ in
               "npm:pi-web-access"
               "npm:pi-subagents"
               "npm:@kevinpita/pi-pstack"
-              "git:github.com/kevinpita/pi-gpt-fast-mode@6a67a9ceba52f9da5f89d5bc98111b419df20022"
               "npm:pi-lens"
               "npm:@ff-labs/fff-bun"
               "npm:@ff-labs/pi-fff"
@@ -161,7 +158,6 @@ in
           text = builtins.toJSON {
             extensionStatuses.colorModes = {
               dictation = "original";
-              fast-mode = "original";
             };
           };
         };
