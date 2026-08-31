@@ -3,7 +3,7 @@
 import type {
 	ExtensionAPI,
 	ExtensionContext,
-} from "@earendil-works/pi-coding-agent"; // pi-lens-ignore: find-import-file-without-extension
+} from "@earendil-works/pi-coding-agent";
 
 const STATUS_ID = "dictation";
 const START_TIMEOUT_MS = 10_000;

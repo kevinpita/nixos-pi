@@ -4,14 +4,14 @@ import type {
 	ExtensionContext,
 	KeybindingsManager,
 	Theme,
-} from "@earendil-works/pi-coding-agent"; // pi-lens-ignore: find-import-file-without-extension
+} from "@earendil-works/pi-coding-agent";
 import {
 	fuzzyFilter,
 	Input,
 	type Focusable,
 	truncateToWidth,
 	visibleWidth,
-} from "@earendil-works/pi-tui"; // pi-lens-ignore: find-import-file-without-extension
+} from "@earendil-works/pi-tui";
 
 type PickerMode = "files" | "content";
 

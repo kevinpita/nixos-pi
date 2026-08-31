@@ -5,7 +5,7 @@ import type {
 	ExtensionContext,
 	KeybindingsManager,
 	Theme,
-} from "@earendil-works/pi-coding-agent"; // pi-lens-ignore: find-import-file-without-extension
+} from "@earendil-works/pi-coding-agent";
 import {
 	type AutocompleteItem,
 	type AutocompleteProvider,
@@ -15,7 +15,7 @@ import {
 	matchesKey,
 	truncateToWidth,
 	visibleWidth,
-} from "@earendil-works/pi-tui"; // pi-lens-ignore: find-import-file-without-extension
+} from "@earendil-works/pi-tui";
 import {
 	extractGitReferenceToken,
 	filterGitReferences,

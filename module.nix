@@ -57,17 +57,6 @@ in
     { config, ... }:
     {
       home.file = {
-        ".pi-lens/config.json" = {
-          force = true;
-          text = builtins.toJSON {
-            ignore = [
-              "**/*.md"
-              "**/*.mdx"
-              "**/*.markdown"
-            ];
-          };
-        };
-
         ".pi/agent/skills".source = ./skills;
 
         ".pi/agent/AGENTS.md".source = ./AGENTS.md;
@@ -140,7 +129,6 @@ in
                 source = "npm:@kevinpita/pi-pstack";
                 skills = [ "+skills/pstack-mode/SKILL.md" ];
               }
-              "npm:pi-lens"
               "npm:@ff-labs/fff-bun"
               "npm:@ff-labs/pi-fff"
               "npm:@narumitw/pi-usage"
