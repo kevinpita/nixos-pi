@@ -71,12 +71,32 @@ export function buildAgentName(
 	return name.slice(0, MAX_AGENT_NAME_LENGTH).replace(/-+$/g, "");
 }
 
-export function buildPiForkArgs(
+type SplitSessionEntry = {
+	readonly type: string;
+	readonly message?: { readonly role?: string };
+};
+
+export function selectSplitBranch<T extends SplitSessionEntry>(
+	branch: readonly T[],
+	isActive: boolean,
+): T[] {
+	if (isActive) {
+		for (let index = branch.length - 1; index >= 0; index -= 1) {
+			const entry = branch[index];
+			if (entry?.type === "message" && entry.message?.role === "user") {
+				return branch.slice(0, index);
+			}
+		}
+	}
+	return [...branch];
+}
+
+export function buildPiSessionArgs(
 	sessionFile: string,
 	label: string,
 	prompt?: string,
 ): string[] {
-	const args = ["--fork", sessionFile, "--name", label];
+	const args = ["--session", sessionFile, "--name", label];
 	if (prompt) args.push(prompt);
 	return args;
 }

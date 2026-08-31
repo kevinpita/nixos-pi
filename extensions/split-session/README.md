@@ -1,8 +1,12 @@
 # Split Session
 
 `/split N [prompt]` keeps the current Pi session and opens `N - 1` additional
-Herdr tabs. Each tab starts Pi with `--fork`, so it inherits the active
-conversation branch while writing to an independent session file.
+Herdr tabs. Each tab gets an independent session file from the active
+conversation branch.
+
+`/split` starts immediately while the agent is active. In this case, each new
+tab starts from the point before the current user prompt. The current tab keeps
+running that prompt.
 
 Without a prompt:
 

@@ -2,12 +2,13 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
 	buildAgentName,
-	buildPiForkArgs,
+	buildPiSessionArgs,
 	buildSplitLabel,
 	expandSplitPrompt,
 	MAX_SPLIT_SESSIONS,
 	parseSplitArgs,
 	parseSplitCount,
+	selectSplitBranch,
 } from "./core.ts";
 
 test("parses the requested total session count", () => {
@@ -55,15 +56,27 @@ test("builds unique Herdr-compatible agent names", () => {
 	assert.notEqual(first, nextRun);
 });
 
-test("builds Pi arguments that fork instead of sharing a session file", () => {
-	assert.deepEqual(buildPiForkArgs("/tmp/parent.jsonl", "split 2/5"), [
-		"--fork",
-		"/tmp/parent.jsonl",
+test("selects the settled branch while an agent prompt is active", () => {
+	const branch = [
+		{ type: "message", message: { role: "user" } },
+		{ type: "message", message: { role: "assistant" } },
+		{ type: "message", message: { role: "user" } },
+		{ type: "message", message: { role: "toolResult" } },
+	];
+	assert.deepEqual(selectSplitBranch(branch, true), branch.slice(0, 2));
+	assert.deepEqual(selectSplitBranch(branch.slice(0, 1), true), []);
+	assert.deepEqual(selectSplitBranch(branch, false), branch);
+});
+
+test("builds Pi arguments for an independent split session file", () => {
+	assert.deepEqual(buildPiSessionArgs("/tmp/child.jsonl", "split 2/5"), [
+		"--session",
+		"/tmp/child.jsonl",
 		"--name",
 		"split 2/5",
 	]);
 	assert.deepEqual(
-		buildPiForkArgs("/tmp/parent.jsonl", "split 2/5", "explain point 2"),
-		["--fork", "/tmp/parent.jsonl", "--name", "split 2/5", "explain point 2"],
+		buildPiSessionArgs("/tmp/child.jsonl", "split 2/5", "explain point 2"),
+		["--session", "/tmp/child.jsonl", "--name", "split 2/5", "explain point 2"],
 	);
 });

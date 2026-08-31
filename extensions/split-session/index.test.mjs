@@ -1,8 +1,18 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import test, { after } from "node:test";
 import splitSessionExtension from "./index.ts";
 
-function harness() {
+const temporaryDirectories = [];
+after(() => {
+	for (const directory of temporaryDirectories) {
+		rmSync(directory, { recursive: true, force: true });
+	}
+});
+
+function harness({ idle = true, branch = [] } = {}) {
 	const commands = new Map();
 	const calls = [];
 	const notifications = [];
@@ -10,6 +20,8 @@ function harness() {
 	const messages = [];
 	let tabNumber = 0;
 	let waited = false;
+	const sessionDirectory = mkdtempSync(join(tmpdir(), "split-session-test-"));
+	temporaryDirectories.push(sessionDirectory);
 
 	const pi = {
 		registerCommand(name, options) {
@@ -62,8 +74,11 @@ function harness() {
 	const ctx = {
 		cwd: "/work/project",
 		sessionManager: {
-			getSessionFile: () => "/sessions/parent.jsonl",
+			getSessionFile: () => join(sessionDirectory, "parent.jsonl"),
+			getSessionDir: () => sessionDirectory,
 			getSessionId: () => "session-123",
+			getHeader: () => ({ type: "session", version: 3 }),
+			getBranch: () => branch,
 		},
 		ui: {
 			notify(message, type) {
@@ -72,6 +87,9 @@ function harness() {
 			setStatus(key, text) {
 				statuses.push({ key, text });
 			},
+		},
+		isIdle() {
+			return idle;
 		},
 		async waitForIdle() {
 			waited = true;
@@ -97,19 +115,22 @@ test("registers /split and opens N minus one forked Pi tabs", async () => {
 
 	await command.handler("3", state.ctx);
 
-	assert.equal(state.wasWaited(), true);
+	assert.equal(state.wasWaited(), false);
 	const tabCalls = state.calls.filter(({ args }) => args[0] === "tab");
 	const agentCalls = state.calls.filter(({ args }) => args[0] === "agent");
 	assert.equal(tabCalls.length, 2);
 	assert.equal(agentCalls.length, 2);
 	assert.ok(tabCalls.every(({ args }) => args.includes("--no-focus")));
 
+	const childSessions = [];
 	for (const { args } of agentCalls) {
 		const separator = args.indexOf("--");
 		const piArgs = args.slice(separator + 1);
-		assert.deepEqual(piArgs.slice(0, 2), ["--fork", "/sessions/parent.jsonl"]);
-		assert.equal(piArgs.includes("--session"), false);
+		assert.equal(piArgs[0], "--session");
+		assert.equal(piArgs.includes("--fork"), false);
+		childSessions.push(piArgs[1]);
 	}
+	assert.notEqual(childSessions[0], childSessions[1]);
 	assert.notEqual(agentCalls[0].args[2], agentCalls[1].args[2]);
 	assert.deepEqual(state.messages, []);
 	assert.match(state.notifications.at(-1).message, /Created 2 forked Pi tabs/);
@@ -117,6 +138,55 @@ test("registers /split and opens N minus one forked Pi tabs", async () => {
 		key: "split-session",
 		text: undefined,
 	});
+});
+
+test("splits an active run immediately from before its current prompt", async () => {
+	const branch = [
+		{
+			type: "message",
+			id: "user-1",
+			parentId: null,
+			message: { role: "user", content: "settled prompt" },
+		},
+		{
+			type: "message",
+			id: "assistant-1",
+			parentId: "user-1",
+			message: { role: "assistant", content: "settled response" },
+		},
+		{
+			type: "message",
+			id: "user-2",
+			parentId: "assistant-1",
+			message: { role: "user", content: "active prompt" },
+		},
+		{
+			type: "message",
+			id: "assistant-2",
+			parentId: "user-2",
+			message: { role: "assistant", content: "active tool call" },
+		},
+	];
+	const state = harness({ idle: false, branch });
+
+	await state.commands.get("split").handler("2", state.ctx);
+
+	assert.equal(state.wasWaited(), false);
+	const agentCall = state.calls.find(({ args }) => args[0] === "agent");
+	const separator = agentCall.args.indexOf("--");
+	const piArgs = agentCall.args.slice(separator + 1);
+	const sessionArgument = piArgs.indexOf("--session");
+	assert.notEqual(sessionArgument, -1);
+	const entries = readFileSync(piArgs[sessionArgument + 1], "utf8")
+		.trim()
+		.split("\n")
+		.map((line) => JSON.parse(line));
+	assert.deepEqual(
+		entries
+			.filter(({ type }) => type === "message")
+			.map(({ message }) => message.content),
+		["settled prompt", "settled response"],
+	);
 });
 
 test("runs an indexed prompt in the current and forked sessions", async () => {

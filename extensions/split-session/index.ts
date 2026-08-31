@@ -1,9 +1,13 @@
+import { randomUUID } from "node:crypto";
+import { writeFileSync } from "node:fs";
+import { join } from "node:path";
 import {
 	buildAgentName,
-	buildPiForkArgs,
+	buildPiSessionArgs,
 	buildSplitLabel,
 	expandSplitPrompt,
 	parseSplitArgs,
+	selectSplitBranch,
 } from "./core.ts";
 
 const AGENT_START_TIMEOUT_MS = 60_000;
@@ -15,9 +19,19 @@ type PiExecResult = {
 	readonly stderr: string;
 };
 
+type SessionEntry = {
+	readonly type: string;
+	readonly id: string;
+	readonly parentId: string | null;
+	readonly message?: { readonly role?: string };
+};
+
 type SessionManager = {
 	getSessionFile(): string | undefined;
+	getSessionDir(): string;
 	getSessionId(): string;
+	getHeader(): { readonly version?: number } | null;
+	getBranch(): SessionEntry[];
 };
 
 type ExtensionCommandContext = {
@@ -27,7 +41,7 @@ type ExtensionCommandContext = {
 		notify(message: string, type?: "info" | "warning" | "error"): void;
 		setStatus(key: string, text: string | undefined): void;
 	};
-	waitForIdle(): Promise<void>;
+	isIdle(): boolean;
 };
 
 type ExtensionAPI = {
@@ -37,7 +51,10 @@ type ExtensionAPI = {
 		options?: { readonly timeout?: number },
 	): Promise<PiExecResult>;
 	getSessionName(): string | undefined;
-	sendUserMessage(content: string): void;
+	sendUserMessage(
+		content: string,
+		options?: { readonly deliverAs: "followUp" },
+	): void;
 	registerCommand(
 		name: string,
 		options: {
@@ -73,6 +90,7 @@ type CreatedTab = {
 	readonly tab: HerdrTab;
 	readonly pane: HerdrPane;
 	readonly agentName: string;
+	readonly sessionFile: string;
 };
 
 function parseHerdrFailure(output: string): string | undefined {
@@ -156,7 +174,6 @@ async function createTab(
 async function startPi(
 	pi: ExtensionAPI,
 	created: CreatedTab,
-	sessionFile: string,
 	prompt?: string,
 ): Promise<void> {
 	await runHerdr(
@@ -172,10 +189,37 @@ async function startPi(
 			"--timeout",
 			String(AGENT_START_TIMEOUT_MS),
 			"--",
-			...buildPiForkArgs(sessionFile, created.label, prompt),
+			...buildPiSessionArgs(created.sessionFile, created.label, prompt),
 		],
 		AGENT_START_TIMEOUT_MS + EXEC_TIMEOUT_PADDING_MS,
 	);
+}
+
+function createSplitSessionFile(
+	ctx: ExtensionCommandContext,
+	parentSession: string,
+	entries: readonly SessionEntry[],
+): string {
+	const timestamp = new Date().toISOString();
+	const sessionId = randomUUID();
+	const fileTimestamp = timestamp.replace(/[:.]/g, "-");
+	const sessionFile = join(
+		ctx.sessionManager.getSessionDir(),
+		`${fileTimestamp}_${sessionId}.jsonl`,
+	);
+	const header = {
+		type: "session",
+		version: ctx.sessionManager.getHeader()?.version ?? 3,
+		id: sessionId,
+		timestamp,
+		cwd: ctx.cwd,
+		parentSession,
+	};
+	const content = [header, ...entries]
+		.map((entry) => JSON.stringify(entry))
+		.join("\n");
+	writeFileSync(sessionFile, `${content}\n`, { flag: "wx" });
+	return sessionFile;
 }
 
 async function splitSession(
@@ -185,14 +229,16 @@ async function splitSession(
 	prompt: string | undefined,
 	sequence: number,
 ): Promise<void> {
-	await ctx.waitForIdle();
-
-	const sessionFile = ctx.sessionManager.getSessionFile();
-	if (!sessionFile) {
+	const parentSession = ctx.sessionManager.getSessionFile();
+	if (!parentSession) {
 		throw new Error(
 			"The current Pi session is not persisted and cannot be forked",
 		);
 	}
+	const branch = selectSplitBranch(
+		ctx.sessionManager.getBranch(),
+		!ctx.isIdle(),
+	);
 
 	const current = await runHerdr<{ pane: HerdrPane }>(
 		pi,
@@ -224,6 +270,7 @@ async function splitSession(
 					tab: result.tab,
 					pane: result.root_pane,
 					agentName: buildAgentName(sessionId, token, index),
+					sessionFile: createSplitSessionFile(ctx, parentSession, branch),
 				});
 			} catch (error) {
 				failures.push(`tab ${index}: ${failureMessage(error)}`);
@@ -236,10 +283,7 @@ async function splitSession(
 				startPi(
 					pi,
 					tab,
-					sessionFile,
-					prompt === undefined
-						? undefined
-						: expandSplitPrompt(prompt, tab.index),
+					prompt === undefined ? undefined : expandSplitPrompt(prompt, tab.index),
 				),
 			),
 		);
@@ -269,7 +313,12 @@ async function splitSession(
 	}
 
 	if (prompt !== undefined && started > 0) {
-		pi.sendUserMessage(expandSplitPrompt(prompt, 1));
+		const currentPrompt = expandSplitPrompt(prompt, 1);
+		if (ctx.isIdle()) {
+			pi.sendUserMessage(currentPrompt);
+		} else {
+			pi.sendUserMessage(currentPrompt, { deliverAs: "followUp" });
+		}
 	}
 }
 
