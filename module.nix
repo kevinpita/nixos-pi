@@ -149,6 +149,7 @@ in
               "npm:pi-claude-code-tui"
               "npm:pi-colours"
               "npm:@quintinshaw/pi-dynamic-workflows"
+              "${./extensions/profile-modes}"
             ];
           };
         };

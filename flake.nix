@@ -127,7 +127,8 @@
                   domain-modeling/SKILL.md \
                   grilling/SKILL.md \
                   grill-me/SKILL.md \
-                  grill-with-docs/SKILL.md
+                  grill-with-docs/SKILL.md \
+                  handoff/SKILL.md
                 do
                   test -f ${homeFiles.".pi/agent/skills".source}/"$skillFile"
                 done
