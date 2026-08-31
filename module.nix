@@ -16,6 +16,16 @@ let
       exec ${piPackage}/bin/pi -e npm:@vigolium/piolium "$@"
     '';
   };
+  piSessionMaintenance = pkgs.writeShellApplication {
+    name = "pi-session-maintenance";
+    runtimeInputs = with pkgs; [
+      coreutils
+      findutils
+      gnutar
+      zstd
+    ];
+    text = builtins.readFile ./scripts/pi-session-maintenance.sh;
+  };
 in
 {
   imports = [ pi-flake.nixosModules.default ];
@@ -45,6 +55,7 @@ in
       fd
       nodejs
       piAudit
+      piSessionMaintenance
     ];
 
     sessionVariables = {
@@ -93,6 +104,23 @@ in
         ".pi/agent/extensions/session-status".source = ./extensions/session-status;
         ".pi/agent/extensions/split-session".source = ./extensions/split-session;
 
+        ".pi/agent/extensions/subagent/config.json" = {
+          force = true;
+          text = builtins.toJSON {
+            defaultSessionDir = "${config.home.homeDirectory}/.local/state/pi-subagents/sessions";
+            artifactDir = "temp";
+          };
+        };
+
+        ".pi/agent/global-prompt-history.json" = {
+          force = true;
+          text = builtins.toJSON {
+            excludedCwdPrefixes = [
+              "${config.home.homeDirectory}/.pi/agent/npm/node_modules/pi-intercom"
+            ];
+          };
+        };
+
         ".pi/agent/settings.json" = {
           force = true;
           text = builtins.toJSON {
@@ -122,7 +150,6 @@ in
                 source = "npm:@ogulcancelik/pi-herdr";
                 skills = [ ];
               }
-              "npm:pi-prompt-template-model"
               "npm:pi-web-access"
               "npm:pi-subagents"
               {
@@ -162,6 +189,25 @@ in
         ".codex/skills" = {
           force = true;
           source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/.pi/agent/skills";
+        };
+      };
+
+      systemd.user = {
+        services.pi-session-maintenance = {
+          Unit.Description = "Archive and remove expired Pi sessions";
+          Service = {
+            Type = "oneshot";
+            ExecStart = "${piSessionMaintenance}/bin/pi-session-maintenance";
+          };
+        };
+        timers.pi-session-maintenance = {
+          Unit.Description = "Run Pi session maintenance each week";
+          Timer = {
+            OnCalendar = "weekly";
+            Persistent = true;
+            RandomizedDelaySec = "1h";
+          };
+          Install.WantedBy = [ "timers.target" ];
         };
       };
     };

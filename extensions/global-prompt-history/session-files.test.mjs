@@ -22,18 +22,25 @@ function message(id, text, timestamp) {
 	});
 }
 
-test("discovers nested JSONL files and reads only valid session headers", async () => {
+test("discovers only primary session JSONL files", async () => {
 	const root = await temporaryDirectory();
-	const nested = join(root, "nested");
-	await mkdir(nested);
-	const valid = join(nested, "valid.jsonl");
-	const invalid = join(root, "invalid.jsonl");
+	const primaryDirectory = join(root, "work-a");
+	const childDirectory = join(primaryDirectory, "parent-session", "run-0");
+	await mkdir(childDirectory, { recursive: true });
+	const valid = join(primaryDirectory, "valid.jsonl");
+	const invalid = join(primaryDirectory, "invalid.jsonl");
+	const child = join(childDirectory, "session.jsonl");
 	await writeFile(
 		valid,
 		`${JSON.stringify({ type: "session", id: "session-a", cwd: "/work/a" })}\n`,
 		"utf8",
 	);
 	await writeFile(invalid, "not a session header\n", "utf8");
+	await writeFile(
+		child,
+		`${JSON.stringify({ type: "session", id: "child-a", cwd: "/work/a" })}\n`,
+		"utf8",
+	);
 	await writeFile(join(root, "ignored.txt"), "ignored", "utf8");
 
 	assert.deepEqual(

@@ -94,17 +94,26 @@ export async function discoverSessionFiles(root: string): Promise<string[]> {
 		throw error;
 	}
 
-	const files = entries.flatMap((entry) => {
-		if (!entry.isFile() || !entry.name.endsWith(".jsonl")) return [];
-		return [join(root, entry.name)];
-	});
-	const nested = await Promise.all(
-		entries.flatMap((entry) => {
-			if (!entry.isDirectory() || entry.isSymbolicLink()) return [];
-			return [discoverSessionFiles(join(root, entry.name))];
+	const sessionDirectories = entries.filter(
+		(entry) => entry.isDirectory() && !entry.isSymbolicLink(),
+	);
+	const sessions = await Promise.all(
+		sessionDirectories.map(async (directory) => {
+			const directoryPath = join(root, directory.name);
+			let children;
+			try {
+				children = await readdir(directoryPath, { withFileTypes: true });
+			} catch (error) {
+				if (isMissingPath(error)) return [];
+				throw error;
+			}
+			return children.flatMap((entry) => {
+				if (!entry.isFile() || !entry.name.endsWith(".jsonl")) return [];
+				return [join(directoryPath, entry.name)];
+			});
 		}),
 	);
-	return files.concat(...nested);
+	return sessions.flat();
 }
 
 function isMissingPath(error: unknown): boolean {
@@ -267,10 +276,7 @@ export async function parseHistorySessionFile(
 	metadata: SessionFileMetadata,
 	options: SessionParseOptions,
 ): Promise<ParsedHistorySession> {
-	const accumulator = new SessionPromptAccumulator(
-		metadata.descriptor,
-		options,
-	);
+	const accumulator = new SessionPromptAccumulator(metadata.descriptor, options);
 	const maxLineCharacters = Math.min(
 		MAX_LINE_CHARACTERS,
 		Math.max(MIN_LINE_CHARACTERS, options.maxPromptBytes * 6),

@@ -66,10 +66,21 @@
         let
           pkgs = nixpkgs.legacyPackages.${system};
           extensionTests =
-            pkgs.runCommand "nixos-pi-extension-tests" { nativeBuildInputs = [ pkgs.nodejs ]; }
+            pkgs.runCommand "nixos-pi-extension-tests"
+              {
+                nativeBuildInputs = with pkgs; [
+                  bash
+                  coreutils
+                  findutils
+                  gnutar
+                  nodejs
+                  zstd
+                ];
+              }
               ''
                 cp -r ${./extensions} extensions
-                chmod -R u+w extensions
+                cp -r ${./scripts} scripts
+                chmod -R u+w extensions scripts
                 mapfile -t tests < <(find extensions -name '*.test.mjs' -type f | sort)
                 node --test "''${tests[@]}"
                 touch "$out"
@@ -98,14 +109,22 @@
                 }
               ];
             };
-            homeFiles = evaluated.config.home-manager.users.kevin.home.file;
-            sharedSkillsTarget = "${evaluated.config.home-manager.users.kevin.home.homeDirectory}/.pi/agent/skills";
+            homeConfig = evaluated.config.home-manager.users.kevin;
+            homeFiles = homeConfig.home.file;
+            piSettings = builtins.fromJSON (
+              builtins.unsafeDiscardStringContext homeFiles.".pi/agent/settings.json".text
+            );
+            subagentConfig = builtins.fromJSON homeFiles.".pi/agent/extensions/subagent/config.json".text;
+            promptHistoryConfig = builtins.fromJSON homeFiles.".pi/agent/global-prompt-history.json".text;
+            sharedSkillsTarget = "${homeConfig.home.homeDirectory}/.pi/agent/skills";
             requiredHomeFiles = [
               ".claude/skills"
               ".codex/skills"
               ".pi/agent/AGENTS.md"
               ".pi/agent/extensions/dictation.ts"
               ".pi/agent/extensions/session-status"
+              ".pi/agent/extensions/subagent/config.json"
+              ".pi/agent/global-prompt-history.json"
               ".pi/agent/settings.json"
               ".pi/agent/skills"
               ".pi/agent/zentui.json"
@@ -119,6 +138,24 @@
               assert missingHomeFiles == [ ];
               assert homeFiles.".claude/skills".force;
               assert homeFiles.".codex/skills".force;
+              assert !(builtins.elem "npm:pi-prompt-template-model" piSettings.packages);
+              assert builtins.any (
+                package: builtins.isString package && builtins.match ".*-profile-modes" package != null
+              ) piSettings.packages;
+              assert subagentConfig.defaultSessionDir == "/home/kevin/.local/state/pi-subagents/sessions";
+              assert subagentConfig.artifactDir == "temp";
+              assert
+                promptHistoryConfig.excludedCwdPrefixes == [
+                  "/home/kevin/.pi/agent/npm/node_modules/pi-intercom"
+                ];
+              assert homeConfig.systemd.user.timers.pi-session-maintenance.Timer.OnCalendar == "weekly";
+              assert homeConfig.systemd.user.timers.pi-session-maintenance.Timer.Persistent;
+              assert
+                builtins.length homeConfig.systemd.user.services.pi-session-maintenance.Service.ExecStart == 1;
+              assert
+                builtins.match ".*/bin/pi-session-maintenance" (
+                  builtins.head homeConfig.systemd.user.services.pi-session-maintenance.Service.ExecStart
+                ) != null;
               pkgs.runCommand "nixos-pi-module-check" { } ''
                 for skillFile in \
                   bro/SKILL.md \

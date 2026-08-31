@@ -49,6 +49,38 @@ nix build .#pi-coding-agent
 ./result/bin/pi --version
 ```
 
+## Use Pi profiles
+
+The local `profile-modes` extension provides these persistent commands:
+
+- `/quick`: Use GPT-5.6 Sol with medium thinking and do not use pstack by default.
+- `/deep`: Use GPT-5.6 Sol with xhigh thinking and use pstack for non-trivial work.
+- `/read`: Permit read-only tools only.
+- `/read-off`: Restore normal tool access.
+
+## Maintain session history
+
+The Home Manager user timer runs `pi-session-maintenance` each week. The command:
+
+- archives primary Pi sessions older than 90 days under `~/.local/share/pi/session-archive/`;
+- removes nested and dedicated subagent sessions older than 30 days;
+- removes expired persistent subagent artifacts; and
+- stores archives as private `.tar.zst` files.
+
+Future subagent sessions use `~/.local/state/pi-subagents/sessions`. Future subagent artifacts use temporary storage.
+
+Run maintenance manually:
+
+```bash
+pi-session-maintenance
+```
+
+Inspect the timer:
+
+```bash
+systemctl --user status pi-session-maintenance.timer
+```
+
 ## Validate changes
 
 Run all flake checks:

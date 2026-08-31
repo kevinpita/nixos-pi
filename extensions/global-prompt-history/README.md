@@ -1,6 +1,6 @@
 # Global prompt history
 
-Search user prompts across every cwd in the active Pi session store without adding the history to model context.
+Search user prompts across primary human sessions in every cwd in the active Pi session store without adding the history to model context. Nested subagent sessions and artifact transcripts are not indexed.
 
 ## Usage
 
