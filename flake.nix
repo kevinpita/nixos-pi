@@ -166,6 +166,7 @@
                   grill-me/SKILL.md \
                   grill-with-docs/SKILL.md \
                   handoff/SKILL.md \
+                  show-me/SKILL.md \
                   writing-for-agents/SKILL-MECHANICS.md \
                   writing-for-agents/SKILL.md
                 do
