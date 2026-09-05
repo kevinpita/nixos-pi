@@ -249,9 +249,9 @@ Use the smallest direct path that answers the request. Skills remain available. 
 Use the pstack-mode skill for every non-trivial task. Read its SKILL.md before you plan or change files. Match one playbook and follow all gates. For a small conversational request, answer directly.
 
 Configured model roles:
-- analysis: openai-codex/gpt-5.6-sol:xhigh
-- implementation: openai-codex/gpt-5.6-sol:xhigh
-- review: openai-codex/gpt-5.6-sol:xhigh`);
+- analysis: openai-codex/gpt-6-astra:xhigh
+- implementation: openai-codex/gpt-6-astra:xhigh
+- review: openai-codex/gpt-6-astra:xhigh`);
 	}
 
 	if (profile.access === "read") {

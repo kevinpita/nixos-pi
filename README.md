@@ -53,8 +53,8 @@ nix build .#pi-coding-agent
 
 The local `profile-modes` extension provides these persistent commands:
 
-- `/quick`: Use GPT-5.6 Sol with medium thinking and do not use pstack by default.
-- `/deep`: Use GPT-5.6 Sol with xhigh thinking and use pstack for non-trivial work.
+- `/quick`: Use GPT-6 Astra with medium thinking and do not use pstack by default.
+- `/deep`: Use GPT-6 Astra with xhigh thinking and use pstack for non-trivial work.
 - `/read`: Permit read-only tools only.
 - `/read-off`: Restore normal tool access.
 

@@ -10,7 +10,7 @@ import {
 } from "./core.ts";
 
 const originalModel = { provider: "openai-codex", id: "gpt-5.6-terra" };
-const profileModel = { provider: "openai-codex", id: "gpt-5.6-sol" };
+const profileModel = { provider: "openai-codex", id: "gpt-6-astra" };
 const activeTools = [
 	"read",
 	"bash",

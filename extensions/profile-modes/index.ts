@@ -17,7 +17,7 @@ import {
 } from "./core.ts";
 
 const PROFILE_PROVIDER = "openai-codex";
-const PROFILE_MODEL = "gpt-5.6-sol";
+const PROFILE_MODEL = "gpt-6-astra";
 
 type SessionModel = {
 	readonly provider: string;
@@ -261,9 +261,9 @@ export default function profileModes(pi: ProfileModesAPI): void {
 		pi.registerCommand(command, {
 			description:
 				command === "quick"
-					? "Enter persistent GPT-5.6 Sol medium mode without pstack"
+					? "Enter persistent GPT-6 Astra medium mode without pstack"
 					: command === "deep"
-						? "Enter persistent GPT-5.6 Sol xhigh mode with pstack"
+						? "Enter persistent GPT-6 Astra xhigh mode with pstack"
 						: command === "read"
 							? "Enable the persistent read-only tool policy"
 							: "Disable the read-only tool policy",
