@@ -1,97 +1,33 @@
-# nixos-pi
+# Pi extensions
 
-This flake installs Pi and manages Kevin's Pi configuration on NixOS.
+This repository contains Pi extension code and its tests. NixOS configuration, Pi settings, skills, prompts, themes, and session maintenance are maintained in [nixos-config](https://github.com/kevinpita/nixos-config).
 
-It contains:
+## Structure
 
-- the Pi package from `pi-flake`
-- Pi and extension settings
-- local Pi extensions and their tests
-- global prompts, themes, and instructions
-- shared Pi, Claude Code, and Codex skills under `skills/`
+- `extensions/`: extension implementations, tests, and extension documentation.
+- `flake.nix`: formatting and extension checks. It does not export a Pi runtime or a NixOS configuration module.
 
-## Use the NixOS module
+## Checks
 
-Add the input:
-
-```nix
-nixos-pi = {
-  url = "github:kevinpita/nixos-pi";
-  inputs.nixpkgs.follows = "nixpkgs";
-  inputs.home-manager.follows = "home-manager";
-};
-```
-
-Import the default module in a NixOS configuration that also imports Home Manager:
-
-```nix
-{
-  imports = [ inputs.nixos-pi.nixosModules.default ];
-}
-```
-
-The caller must pass `username` as a module argument. The current `nixos-config` flake does this through `specialArgs`.
-
-The dictation command is host-specific. A host that provides `dictate-toggle` can also import:
-
-```nix
-{
-  imports = [ inputs.nixos-pi.nixosModules.dictationExtension ];
-}
-```
-
-## Use the package
-
-Build Pi directly:
+With Node.js 24 or later:
 
 ```bash
-nix build .#pi-coding-agent
-./result/bin/pi --version
+node --test $(find extensions -name '*.test.mjs' -type f | sort)
 ```
 
-## Use Pi profiles
-
-The local `profile-modes` extension provides these persistent commands:
-
-- `/quick`: Use GPT-6 Astra with medium thinking and do not use pstack by default.
-- `/deep`: Use GPT-6 Astra with xhigh thinking and use pstack for non-trivial work.
-- `/read`: Permit read-only tools only.
-- `/read-off`: Restore normal tool access.
-
-## Maintain session history
-
-The Home Manager user timer runs `pi-session-maintenance` each week. The command:
-
-- archives primary Pi sessions older than 90 days under `~/.local/share/pi/session-archive/`;
-- removes nested and dedicated subagent sessions older than 30 days;
-- removes expired persistent subagent artifacts; and
-- stores archives as private `.tar.zst` files.
-
-Future subagent sessions use `~/.local/state/pi-subagents/sessions`. Future subagent artifacts use temporary storage.
-
-Run maintenance manually:
+With Nix:
 
 ```bash
-pi-session-maintenance
+nix fmt -- flake.nix
+nix flake check
 ```
 
-Inspect the timer:
+## NixOS integration
+
+`nixos-config` consumes this repository through its `pi-extensions` input with `flake = false`. It selects extension files in `modules/pi.nix`; it does not load every extension automatically.
+
+After publishing an extension change, update that input in `nixos-config`:
 
 ```bash
-systemctl --user status pi-session-maintenance.timer
-```
-
-## Validate changes
-
-Run all flake checks:
-
-```bash
-nix flake check --all-systems
-```
-
-Run the extension tests without Nix:
-
-```bash
-mapfile -t tests < <(find extensions -name '*.test.mjs' -type f | sort)
-node --test "${tests[@]}"
+nix flake update pi-extensions
 ```
