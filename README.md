@@ -7,6 +7,8 @@ This repository contains Pi extension code and its tests. NixOS configuration, P
 - `extensions/`: extension implementations, tests, and extension documentation.
 - `flake.nix`: formatting and extension checks. It does not export a Pi runtime or a NixOS configuration module.
 
+[`pi-fast`](extensions/pi-fast/README.md) adds a persistent `/fast` toggle, a configurable default, and inheritance by Pi subagents.
+
 ## Checks
 
 With Node.js 24 or later:
