@@ -1,5 +1,5 @@
 {
-  description = "Pi extensions and extension checks";
+  description = "Pi extensions, adapters, and checks";
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 

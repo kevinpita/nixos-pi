@@ -1,11 +1,14 @@
-# Pi extensions
+# Pi extensions and adapters
 
-This repository contains Pi extension code and its tests. NixOS configuration, Pi settings, skills, prompts, themes, and session maintenance are maintained in [nixos-config](https://github.com/kevinpita/nixos-config).
+This repository contains Pi extensions, their tests, and external CLI adapters. NixOS configuration, Pi settings, skills, prompts, themes, and session maintenance are maintained in [nixos-config](https://github.com/kevinpita/nixos-config).
 
 ## Structure
 
 - `extensions/`: extension implementations, tests, and extension documentation.
+- `adapters/`: external CLI adapters and adapter documentation.
 - `flake.nix`: formatting and extension checks. It does not export a Pi runtime or a NixOS configuration module.
+
+[`agy`](adapters/agy/README.md) provides isolated, handoff-only review through Antigravity CLI. Agent profiles and model preferences stay in `nixos-config`.
 
 [`pi-fast`](extensions/pi-fast/README.md) adds a persistent `/fast` toggle, a configurable default, and inheritance by Pi subagents.
 
