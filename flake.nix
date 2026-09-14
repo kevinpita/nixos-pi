@@ -20,6 +20,13 @@
           pkgs = nixpkgs.legacyPackages.${system};
         in
         {
+          adapters = pkgs.runCommand "pi-adapter-tests" { nativeBuildInputs = [ pkgs.nodejs ]; } ''
+            cp -r ${./adapters} adapters
+            chmod -R u+w adapters
+            mapfile -t tests < <(find adapters -name '*.test.mjs' -type f | sort)
+            node --test "''${tests[@]}"
+            touch "$out"
+          '';
           extensions = pkgs.runCommand "pi-extension-tests" { nativeBuildInputs = [ pkgs.nodejs ]; } ''
             cp -r ${./extensions} extensions
             chmod -R u+w extensions

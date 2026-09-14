@@ -36,7 +36,7 @@ export class AgyProtocol {
     if (event.event === "init") {
       if (this.id) throw new Error("Duplicate AGY init");
       if (typeof event.conversation_id !== "string" || !event.conversation_id) throw new Error("Missing AGY conversation identity");
-      if (event.init?.model !== this.model || event.init?.permission_mode !== "strict" || event.init?.cwd !== this.cwd) {
+      if (event.init?.model !== this.model || !["strict", "request-review", "proceed-in-sandbox", "always-proceed"].includes(event.init?.permission_mode) || event.init?.cwd !== this.cwd) {
         throw new Error("AGY model, permissions, or workspace do not match the adapter contract");
       }
       this.id = event.conversation_id;
@@ -45,7 +45,7 @@ export class AgyProtocol {
     if (!this.id) {
       if (event.event === "result" && event.result?.status === "ERROR") {
         const auth = /auth|login/i.test(String(event.result.error));
-        throw new Error(auth ? "AGY authentication failed. Check the existing desktop keyring login." : "AGY startup failed before init. Check sandbox and CLI compatibility.");
+        throw new Error(auth ? "AGY authentication failed. Check the existing AGY login on this host." : "AGY startup failed before init. Check local settings and CLI compatibility.");
       }
       throw new Error("AGY event arrived before init");
     }

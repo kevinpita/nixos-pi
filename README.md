@@ -6,9 +6,9 @@ This repository contains Pi extensions, their tests, and external CLI adapters. 
 
 - `extensions/`: extension implementations, tests, and extension documentation.
 - `adapters/`: external CLI adapters and adapter documentation.
-- `flake.nix`: formatting and extension checks. It does not export a Pi runtime or a NixOS configuration module.
+- `flake.nix`: formatting, extension checks, and adapter checks. It does not export a Pi runtime or a NixOS configuration module.
 
-[`agy`](adapters/agy/README.md) provides isolated, handoff-only review through Antigravity CLI. Agent profiles and model preferences stay in `nixos-config`.
+[`agy`](adapters/agy/README.md) provides handoff-only review through local Antigravity CLI, using the operator's normal login and settings without adapter filesystem isolation. Agent profiles and model preferences stay in `nixos-config`.
 
 [`pi-fast`](extensions/pi-fast/README.md) adds a persistent `/fast` toggle, a configurable default, and inheritance by Pi subagents.
 
@@ -17,7 +17,7 @@ This repository contains Pi extensions, their tests, and external CLI adapters. 
 With Node.js 24 or later:
 
 ```bash
-node --test $(find extensions -name '*.test.mjs' -type f | sort)
+node --test $(find extensions adapters -name '*.test.mjs' -type f | sort)
 ```
 
 With Nix:
