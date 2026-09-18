@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { createProvider, envApiKeyAuth } from "@earendil-works/pi-ai";
 import {
 	buildSessionContext,
 	estimateTokens,
@@ -11,6 +12,7 @@ import { candidates, prune, recentConversation, type Judgments, type Message } f
 import { judge } from "./jev.ts";
 
 const STATE = "jev-context";
+const PROVIDER = "typesafe";
 
 interface Settings {
 	enabled: boolean;
@@ -72,6 +74,17 @@ function loadDefaults(): Settings {
 }
 
 export default function jevContext(pi: ExtensionAPI): void {
+	pi.registerProvider(
+		createProvider({
+			id: PROVIDER,
+			name: "TypeSafe (Jev)",
+			auth: { apiKey: envApiKeyAuth("TypeSafe API key", ["TYPESAFE_API_KEY"]) },
+			// Jev uses the judgment API in jev.ts, not a chat completion API.
+			models: [],
+			api: {},
+		}),
+	);
+
 	let defaults = { ...DEFAULTS };
 	let settings = { ...DEFAULTS };
 	let judgments: Judgments = new Map();
@@ -167,8 +180,8 @@ export default function jevContext(pi: ExtensionAPI): void {
 		]);
 		status(ctx);
 		try {
-			const apiKey = process.env.TYPESAFE_API_KEY;
-			if (!apiKey) throw new Error("Set TYPESAFE_API_KEY, then run /jev on.");
+			const apiKey = (await ctx.modelRegistry.getProviderAuth(PROVIDER))?.auth.apiKey;
+			if (!apiKey) throw new Error("Run /login typesafe, then /jev on.");
 			const scores = await judge(
 				units,
 				recentConversation(messages),

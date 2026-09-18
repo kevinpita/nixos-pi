@@ -11,13 +11,27 @@ Add the absolute path to `extensions/jev-context/index.ts` to the `extensions` a
 For a temporary session:
 
 ```bash
-export TYPESAFE_API_KEY='your-key'
 pi -e ./extensions/jev-context/index.ts
 ```
 
 This repository does not enable extensions automatically. NixOS users must select the extension directory in `nixos-config/modules/pi.nix` too.
 
-**Privacy:** When enabled, the extension sends candidate assistant history, tool arguments and text results, and excerpts of recent conversation to `https://api.typesafe.ai/v1/systemone`. These can contain private code or secrets. The API key is read from the environment and is not saved in the session. No requests are made while disabled.
+## Authentication
+
+After loading the extension, run:
+
+```text
+/login typesafe
+/jev on
+```
+
+Enter the API key in Pi's secret prompt. Get a key from https://console.typesafe.ai. Pi stores it under `typesafe` in its standard `auth.json` credential file, normally `~/.pi/agent/auth.json`. Do not commit this file. The extension resolves credentials through Pi for each scan and never saves the key in session entries or Nix configuration.
+
+TypeSafe appears as **TypeSafe (Jev)** in `/login`. It does not add a main-agent model to `/model`: Jev answers structured judgment questions, not chat completions.
+
+`TYPESAFE_API_KEY` remains an optional fallback. A stored key takes precedence. `/logout typesafe` removes the stored key, but the fallback still works if the environment variable remains set. If judging paused before login, use `/jev on` to resume it.
+
+**Privacy:** When enabled, the extension sends candidate assistant history, tool arguments and text results, and excerpts of recent conversation to `https://api.typesafe.ai/v1/systemone`. These can contain private code or secrets. No TypeSafe API requests are made while disabled.
 
 ## Commands
 
