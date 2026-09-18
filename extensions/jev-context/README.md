@@ -57,7 +57,8 @@ Session settings saved by `/jev` take precedence over these defaults. `timeoutMs
 - While running, exclude the latest `buffer` calls from judging and pruning. Even a previously hidden call is protected if it is in this active buffer.
 - At `agent_settled`, scan in the background with no tool buffer. New input, agent activity, compaction, navigation, shutdown, or a settings change cancels the scan.
 - Keep all user messages, system instructions, extension messages, and compaction/branch summaries. This deliberately protects older user requirements too.
-- Judge each complete text-only tool call/result pair. Remove both together, never just one half. Incomplete or ambiguous pairs, image results, and results that introduce dynamically loaded tools stay intact.
+- Keep all `todo` calls and results, including previously judged ones. The task list persists outside model context. Hiding its operations can make the agent forget task IDs and create duplicate work. This protection does not remove existing duplicate tasks.
+- Judge each other complete text-only tool call/result pair. Remove both together, never just one half. Incomplete or ambiguous pairs, image results, and results that introduce dynamically loaded tools stay intact.
 - Judge assistant text and readable thinking together as one unit. Retain the original assistant content while any of its tool calls survive. Opaque or redacted thinking stays intact.
 - Judge user shell execution history, except commands excluded from model context with `!!`.
 - Keep unknown message types. Do not send image data or tool-result `details` to Jev.

@@ -49,6 +49,9 @@ export function candidates(messages: Message[], buffer: number): Candidate[] {
 			continue;
 		const block = assistant.content[call.block];
 		if (block.type !== "toolCall") continue;
+		// Todo state outlives model context. Keep its operations visible so the agent
+		// can use existing task IDs instead of recreating work it has forgotten.
+		if (block.name === "todo") continue;
 		const text = JSON.stringify({
 			kind: "tool",
 			call: { name: block.name, arguments: block.arguments },
