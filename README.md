@@ -12,6 +12,8 @@ This repository contains Pi extensions, their tests, and external CLI adapters. 
 
 [`pi-fast`](extensions/pi-fast/README.md) adds a persistent `/fast` toggle, a configurable default, and inheritance by Pi subagents.
 
+[`jev-context`](extensions/jev-context/README.md) uses TypeSafe Jev to prune outgoing context, protect a recent-tool buffer during work, and recheck history with `/rejev`.
+
 ## Checks
 
 With Node.js 24 or later:
