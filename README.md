@@ -12,7 +12,7 @@ This repository contains Pi extensions, their tests, and external CLI adapters. 
 
 [`pi-fast`](extensions/pi-fast/README.md) adds a persistent `/fast` toggle, a configurable default, and inheritance by Pi subagents.
 
-[`jev-context`](extensions/jev-context/README.md) uses TypeSafe Jev to prune outgoing context, protect a recent-tool buffer during work, and recheck history with `/rejev`.
+Jev context pruning now lives in its own repository: [`pi-jev-context`](https://github.com/kevinpita/pi-jev-context). Install it with `pi install npm:pi-jev-context`.
 
 ## Checks
 
