@@ -2,7 +2,7 @@
 
 `/fast` toggles fast service for the current session. The setting survives subsequent turns, reloads, and resumes, and follows the selected session branch. New sessions start with the configured default.
 
-Supported models on `openai-codex` and `openai`: GPT-5.4, GPT-5.5, GPT-5.6 (including Luna, Sol, and Terra), and GPT-6 Astra. Requests use `service_tier: "priority"` when enabled and `"default"` when disabled. Other models are left unchanged. The model and thinking level stay the same.
+Supported models on `openai-codex` and `openai`: GPT-5.4, GPT-5.5, GPT-5.6 (including Luna, Sol, and Terra), and GPT-6 Astra, Luna, and Sol. Requests use `service_tier: "priority"` when enabled and `"default"` when disabled. Other models are left unchanged. The model and thinking level stay the same.
 
 OpenAI accepts `priority` for [Fast mode](https://openai.com/api-fast-mode/). Availability and actual service depend on the account and backend.
 
