@@ -7,17 +7,6 @@ import {
 } from "@earendil-works/pi-coding-agent";
 
 const STATE = "pi-fast";
-const MODELS = new Set([
-	"gpt-5.4",
-	"gpt-5.5",
-	"gpt-5.6",
-	"gpt-5.6-luna",
-	"gpt-5.6-sol",
-	"gpt-5.6-terra",
-	"gpt-6-astra",
-	"gpt-6-luna",
-	"gpt-6-sol",
-]);
 
 export default function piFast(pi: ExtensionAPI): void {
 	let enabledByDefault = false;
@@ -42,7 +31,9 @@ export default function piFast(pi: ExtensionAPI): void {
 	function supported(model: ExtensionContext["model"]): boolean {
 		return model !== undefined
 			&& (model.provider === "openai-codex" || model.provider === "openai")
-			&& MODELS.has(model.id);
+			&& (model.api === "openai-codex-responses"
+				|| model.api === "openai-responses"
+				|| model.api === "openai-completions");
 	}
 
 	function update(ctx: ExtensionContext): void {
